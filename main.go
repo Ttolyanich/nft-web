@@ -401,10 +401,7 @@ func handleGetWhitelist(w http.ResponseWriter, r *http.Request) {
 
 func updateAdminIpsInContent(content string, items []WhitelistItem) string {
 	var b strings.Builder
-	b.WriteString("set admin_ips {\n")
-	b.WriteString("                type ipv4_addr\n")
-	b.WriteString("                flags interval\n")
-	b.WriteString("                elements = {\n")
+	b.WriteString("elements = {\n")
 	b.WriteString("                        127.0.0.1,\n")
 	for _, item := range items {
 		if item.IP == "127.0.0.1" || item.IP == "" {
@@ -416,12 +413,11 @@ func updateAdminIpsInContent(content string, items []WhitelistItem) string {
 			b.WriteString(fmt.Sprintf("                        %s,\n", item.IP))
 		}
 	}
-	b.WriteString("                }\n")
-	b.WriteString("        }")
+	b.WriteString("                }")
 
-	reSet := regexp.MustCompile(`(?s)set\s+admin_ips\s*\{.*?\n\s*\}`)
-	if reSet.MatchString(content) {
-		return reSet.ReplaceAllString(content, b.String())
+	reElements := regexp.MustCompile(`(?s)elements\s*=\s*\{[^}]*\}`)
+	if reElements.MatchString(content) {
+		return reElements.ReplaceAllString(content, b.String())
 	}
 	return content
 }
