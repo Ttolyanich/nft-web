@@ -1,0 +1,75 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+define WAN = __WAN_IFACE__
+define LAN = __LAN_IFACE__
+
+table ip filter {
+        # Список доверенных IP-адресов администраторов
+        set admin_ips {
+                type ipv4_addr
+                flags interval
+                elements = {
+                        # Внесите ваши белые IP (например: 203.0.113.10)
+                }
+        }
+
+        chain INPUT {
+                type filter hook input priority filter; policy drop;
+
+                # Защита от поврежденных и некорректных пакетов
+                ct state invalid drop
+
+                # Разрешаем установленные и зависимые соединения
+                ct state established,related accept
+
+                # Локальная петля
+                iifname "lo" accept
+
+                # Разрешаем обращения из локальной сети к шлюзу (DNS, ping, SSH из LAN)
+                iifname $LAN accept
+
+                # ICMP (ping, MTU discovery)
+                icmp type { echo-reply, destination-unreachable, echo-request, time-exceeded } accept
+
+                # Доступ администраторов из белого списка
+                ip saddr @admin_ips accept
+        }
+
+        chain FORWARD {
+                type filter hook forward priority filter; policy drop;
+
+                # Защита от мусорных пакетов
+                ct state invalid drop
+
+                # Пропускаем ответы на уже открытые сессии
+                ct state established,related accept
+
+                # Выход из локальной сети в интернет
+                iifname $LAN oifname $WAN accept
+
+                # Разрешенные входящие пробросы портов к внутренним ВМ (DNAT Forwarding)
+                # Добавляются автоматически через веб-интерфейс
+        }
+
+        chain OUTPUT {
+                type filter hook output priority filter; policy accept;
+        }
+}
+
+table ip nat {
+        chain PREROUTING {
+                type nat hook prerouting priority dstnat; policy accept;
+
+                # Правила проброса портов (Port Forwarding / DNAT)
+                # Добавляются автоматически через веб-интерфейс
+        }
+
+        chain POSTROUTING {
+                type nat hook postrouting priority srcnat; policy accept;
+
+                # Маскарадинг: выход локальной сети наружу через WAN IP
+                oifname $WAN iifname $LAN masquerade
+        }
+}

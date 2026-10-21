@@ -1,0 +1,5 @@
+nft-web
+*.bak
+*.backup.*
+*.tmp
+.env
