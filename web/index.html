@@ -6,17 +6,17 @@
     <title>NFTables Gateway Manager</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --panel-bg: #1e293b;
-            --panel-border: #334155;
-            --text-main: #f8fafc;
+            --bg-color: #0b0f19;
+            --panel-bg: #131b2e;
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --primary: #3b82f6;
             --primary-hover: #2563eb;
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --code-bg: #0b1120;
+            --code-bg: #070a13;
         }
 
         * {
@@ -35,49 +35,41 @@
             flex-direction: column;
         }
 
+        /* Top Header */
         header {
             background-color: var(--panel-bg);
             border-bottom: 1px solid var(--panel-border);
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 0.75rem 0;
             position: sticky;
             top: 0;
             z-index: 100;
         }
 
-        .header-left {
+        .header-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 1rem;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 0.75rem;
-        }
-
-        .menu-toggle {
-            display: none;
-            background: none;
-            border: 1px solid var(--panel-border);
-            color: var(--text-main);
-            padding: 0.4rem 0.65rem;
-            border-radius: 6px;
-            font-size: 1.25rem;
-            cursor: pointer;
         }
 
         .logo {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-main);
+            letter-spacing: -0.01em;
         }
 
         .logo-badge {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            padding: 0.2rem 0.45rem;
-            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 0.15rem 0.45rem;
+            border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 600;
         }
@@ -91,9 +83,9 @@
         .status-pill {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            font-size: 0.8rem;
-            padding: 0.3rem 0.65rem;
+            gap: 0.35rem;
+            font-size: 0.78rem;
+            padding: 0.25rem 0.6rem;
             border-radius: 9999px;
             background-color: rgba(16, 185, 129, 0.1);
             color: var(--success);
@@ -101,70 +93,73 @@
         }
 
         .status-dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background-color: var(--success);
-            box-shadow: 0 0 6px var(--success);
         }
 
-        .main-container {
-            display: flex;
-            flex: 1;
-            position: relative;
+        /* Horizontal Tab Bar (Compact & Sleek) */
+        .nav-wrapper {
+            background-color: rgba(19, 27, 46, 0.6);
+            border-bottom: 1px solid var(--panel-border);
+            backdrop-filter: blur(8px);
         }
 
-        /* Sidebar Tabs */
-        .sidebar {
-            width: 250px;
-            background-color: var(--panel-bg);
-            border-right: 1px solid var(--panel-border);
-            padding: 1.25rem 0.75rem;
+        .nav-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 1rem;
             display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-            transition: transform 0.3s ease;
+            gap: 0.25rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
+
+        .nav-inner::-webkit-scrollbar { display: none; }
 
         .tab-btn {
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.7rem 0.85rem;
+            gap: 0.4rem;
+            padding: 0.65rem 0.85rem;
             color: var(--text-muted);
             background: none;
             border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            font-size: 0.85rem;
             font-weight: 500;
             cursor: pointer;
-            text-align: left;
-            transition: all 0.2s;
+            white-space: nowrap;
+            transition: all 0.15s ease;
         }
 
         .tab-btn:hover {
             color: var(--text-main);
-            background-color: rgba(255, 255, 255, 0.05);
         }
 
         .tab-btn.active {
-            color: white;
-            background-color: var(--primary);
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
         }
 
-        /* Content Area */
-        .content {
+        /* Main Container - Centered and Compact */
+        .main-container {
+            max-width: 1080px;
+            width: 100%;
+            margin: 1.25rem auto;
+            padding: 0 1rem 3rem 1rem;
             flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
         }
 
         .panel {
             background-color: var(--panel-bg);
             border: 1px solid var(--panel-border);
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 1.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .panel-header {
@@ -179,37 +174,41 @@
         }
 
         .panel-title {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
+            color: var(--text-main);
         }
 
+        /* Stats Grid */
         .grid-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
         }
 
         .stat-card {
             background-color: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--panel-border);
             border-radius: 8px;
-            padding: 0.85rem 1rem;
+            padding: 0.75rem 1rem;
         }
 
         .stat-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
 
         .stat-value {
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--text-main);
         }
 
-        /* Tables & Responsive Wrapper */
+        /* Tables */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -219,20 +218,20 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.88rem;
-            min-width: 500px;
+            font-size: 0.85rem;
         }
 
         th {
             text-align: left;
-            padding: 0.7rem 0.85rem;
+            padding: 0.6rem 0.75rem;
             color: var(--text-muted);
             border-bottom: 1px solid var(--panel-border);
             font-weight: 600;
+            background: rgba(0, 0, 0, 0.1);
         }
 
         td {
-            padding: 0.7rem 0.85rem;
+            padding: 0.6rem 0.75rem;
             border-bottom: 1px solid var(--panel-border);
         }
 
@@ -241,41 +240,41 @@
 
         .badge {
             display: inline-block;
-            padding: 0.2rem 0.5rem;
+            padding: 0.15rem 0.45rem;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
         }
 
-        .badge-tcp { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .badge-udp { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-        .badge-admin { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-        .badge-lan { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
-        .badge-conflict { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-tcp { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-udp { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-admin { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-lan { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .badge-conflict { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
         /* Buttons & Forms */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.85rem;
+            gap: 0.4rem;
+            padding: 0.4rem 0.75rem;
             border-radius: 6px;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 500;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
-            min-height: 38px;
+            transition: all 0.15s ease;
+            min-height: 34px;
         }
 
         .btn-primary { background-color: var(--primary); color: white; }
         .btn-primary:hover { background-color: var(--primary-hover); }
 
         .btn-danger {
-            background-color: rgba(239, 68, 68, 0.15);
+            background-color: rgba(239, 68, 68, 0.12);
             color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.25);
         }
         .btn-danger:hover { background-color: var(--danger); color: white; }
         .btn-success { background-color: var(--success); color: white; }
@@ -284,7 +283,7 @@
             display: flex;
             gap: 0.5rem;
             align-items: center;
-            margin-top: 1rem;
+            margin-top: 0.85rem;
             flex-wrap: wrap;
         }
 
@@ -292,36 +291,37 @@
             background-color: var(--code-bg);
             border: 1px solid var(--panel-border);
             color: var(--text-main);
-            padding: 0.55rem 0.75rem;
+            padding: 0.45rem 0.65rem;
             border-radius: 6px;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             outline: none;
-            min-height: 38px;
+            min-height: 34px;
         }
 
         input:focus, select:focus, textarea:focus { border-color: var(--primary); }
 
         textarea.code-editor {
             width: 100%;
-            height: 440px;
+            height: 420px;
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-            font-size: 0.88rem;
-            line-height: 1.5;
+            font-size: 0.85rem;
+            line-height: 1.45;
             resize: vertical;
             white-space: pre;
             tab-size: 4;
+            padding: 0.75rem;
         }
 
         .alert {
-            padding: 0.75rem 1rem;
+            padding: 0.65rem 0.85rem;
             border-radius: 6px;
             margin-bottom: 1rem;
-            font-size: 0.88rem;
+            font-size: 0.85rem;
             display: none;
         }
 
-        .alert-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #34d399; }
-        .alert-danger { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #f87171; }
+        .alert-success { background: rgba(16, 185, 129, 0.12); border: 1px solid var(--success); color: #34d399; }
+        .alert-danger { background: rgba(239, 68, 68, 0.12); border: 1px solid var(--danger); color: #f87171; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -331,22 +331,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.85rem 1rem;
-            background: rgba(255, 255, 255, 0.02);
+            padding: 0.75rem 0.85rem;
+            background: rgba(255, 255, 255, 0.015);
             border: 1px solid var(--panel-border);
-            border-radius: 8px;
-            margin-bottom: 0.65rem;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
             gap: 0.75rem;
         }
 
-        .toggle-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
-        .toggle-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .toggle-info h4 { font-size: 0.9rem; margin-bottom: 0.15rem; font-weight: 600; }
+        .toggle-info p { font-size: 0.78rem; color: var(--text-muted); }
 
         /* Login Modal Screen */
         #loginScreen {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(11, 15, 25, 0.95);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -360,31 +360,15 @@
             border-radius: 12px;
             padding: 2rem;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 360px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             text-align: center;
         }
 
-        .login-card h2 { margin-bottom: 0.5rem; font-size: 1.3rem; }
-        .login-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .login-card h2 { margin-bottom: 0.4rem; font-size: 1.2rem; }
+        .login-card p { color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1.25rem; }
 
-        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .menu-toggle { display: block; }
-            .sidebar {
-                position: fixed;
-                top: 57px;
-                left: 0;
-                bottom: 0;
-                z-index: 90;
-                transform: translateX(-100%);
-                width: 260px;
-                box-shadow: 10px 0 20px rgba(0,0,0,0.5);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .content { padding: 1rem; }
             .toggle-card { flex-direction: column; align-items: flex-start; }
             .toggle-card select { width: 100% !important; }
             .input-group input, .input-group select, .input-group button {
@@ -399,12 +383,12 @@
     <!-- Login Modal (Password Only) -->
     <div id="loginScreen" style="display: none;">
         <div class="login-card">
-            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🛡️</div>
-            <h2>NFT Gateway Manager</h2>
-            <p>Введите пароль администратора для доступа</p>
-            <div id="loginAlert" class="alert alert-danger" style="margin-bottom: 1rem;"></div>
+            <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🛡️</div>
+            <h2>NFT Gateway</h2>
+            <p>Пароль администратора для входа</p>
+            <div id="loginAlert" class="alert alert-danger" style="margin-bottom: 0.85rem;"></div>
             <form onsubmit="handleLoginSubmit(event)">
-                <input type="password" id="adminPassword" placeholder="Пароль администратора" style="width: 100%; margin-bottom: 1rem;" required autofocus>
+                <input type="password" id="adminPassword" placeholder="Пароль" style="width: 100%; margin-bottom: 0.85rem;" required autofocus>
                 <button type="submit" class="btn btn-primary" style="width: 100%;" id="loginBtn">Войти в панель</button>
             </form>
         </div>
@@ -412,425 +396,413 @@
 
     <!-- App Header -->
     <header>
-        <div class="header-left">
-            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="header-inner">
             <div class="logo">
-                <span>🛡️ NFT-GW Manager</span>
+                <span>🛡️ NFT-GW</span>
                 <span class="logo-badge">Gateway</span>
             </div>
-        </div>
-        <div class="header-actions">
-            <div class="status-pill" id="serviceStatus">
-                <div class="status-dot"></div>
-                <span id="nftStatusText">Active</span>
+            <div class="header-actions">
+                <div class="status-pill" id="serviceStatus">
+                    <div class="status-dot"></div>
+                    <span id="nftStatusText">Active</span>
+                </div>
+                <button class="btn btn-danger" onclick="logout()" style="padding: 0.25rem 0.55rem; font-size: 0.78rem; min-height: 28px;">Выход</button>
             </div>
-            <button class="btn btn-danger" onclick="logout()" style="padding: 0.35rem 0.65rem; font-size: 0.8rem; min-height: 32px;">Выход</button>
         </div>
     </header>
 
-    <div class="main-container">
-        <!-- Sidebar Navigation -->
-        <div class="sidebar" id="sidebar">
+    <!-- Horizontal Tabs Navigation -->
+    <div class="nav-wrapper">
+        <div class="nav-inner">
             <button class="tab-btn active" onclick="switchTab('dashboard')">
-                📊 Обзор & Статус
+                📊 Обзор
             </button>
             <button class="tab-btn" onclick="switchTab('inputrules')">
                 🛡️ Входящие (INPUT)
             </button>
             <button class="tab-btn" onclick="switchTab('whitelist')">
-                📝 Белый список (@admin_ips)
+                📝 Белый список
             </button>
             <button class="tab-btn" onclick="switchTab('forwards')">
                 🔀 Проброс портов (DNAT)
             </button>
             <button class="tab-btn" onclick="switchTab('fail2ban')">
-                🚫 Fail2ban (Блокировки)
+                🚫 Fail2ban
             </button>
             <button class="tab-btn" onclick="switchTab('editor')">
-                ⚙️ Редактор конфига
+                ⚙️ Конфиг
             </button>
             <button class="tab-btn" onclick="switchTab('connections')">
-                🌐 NAT Соединения
+                🌐 NAT Сессии
             </button>
-        </div>
-
-        <!-- Content Area -->
-        <div class="content" onclick="closeSidebarIfMobile()">
-            <div id="alertBox" class="alert"></div>
-
-            <!-- Tab 1: Dashboard -->
-            <div id="tab-dashboard" class="tab-content active">
-                <div class="grid-stats">
-                    <div class="stat-card">
-                        <div class="stat-label">Сервер / Hostname</div>
-                        <div class="stat-value" id="statHostname">-</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">IP Forwarding (sysctl)</div>
-                        <div class="stat-value" id="statForwarding" style="color: var(--success);">-</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Fail2ban Статус</div>
-                        <div class="stat-value" id="statFail2ban" style="color: var(--success);">-</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">Доверенных IP</div>
-                        <div class="stat-value" id="statWhitelistCount">0</div>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <div class="panel-title">Сетевые интерфейсы шлюза</div>
-                        <button class="btn btn-primary" onclick="loadDashboard()">Обновить</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table id="ifaceTable">
-                            <thead>
-                                <tr>
-                                    <th>Интерфейс</th>
-                                    <th>Состояние</th>
-                                    <th>IP Адрес / Маска</th>
-                                    <th>MAC Адрес</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ifaceList">
-                                <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 2: Input Rules & Toggles -->
-            <div id="tab-inputrules" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Службы шлюза (INPUT Toggles)</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Управление портами, которые слушает сам шлюз.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Toggle SSH -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>🔑 SSH Доступ (порт 22)</h4>
-                            <p>Режим удаленного входа по консоли.</p>
-                        </div>
-                        <select id="toggleSSH" onchange="toggleService('ssh', this.value)" style="width: 210px;">
-                            <option value="admin_ips">Только белый список (@admin_ips)</option>
-                            <option value="all">Разрешен всем (0.0.0.0/0)</option>
-                        </select>
-                    </div>
-
-                    <!-- Toggle HTTP 80 -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>🌐 Веб-сервер HTTP (порт 80)</h4>
-                            <p id="httpDesc">Локальный HTTP на шлюзе (для ACME / Let's Encrypt).</p>
-                        </div>
-                        <div id="httpWrapper">
-                            <select id="toggleHTTP" onchange="toggleService('http', this.value)" style="width: 140px;">
-                                <option value="false">Выключено</option>
-                                <option value="true">Включено</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Toggle HTTPS 443 -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>🔒 Веб-сервер HTTPS (порт 443)</h4>
-                            <p id="httpsDesc">Локальный HTTPS на шлюзе.</p>
-                        </div>
-                        <div id="httpsWrapper">
-                            <select id="toggleHTTPS" onchange="toggleService('https', this.value)" style="width: 140px;">
-                                <option value="false">Выключено</option>
-                                <option value="true">Включено</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Toggle ICMP -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>📡 ICMP Ping</h4>
-                            <p>Ответы на echo-request и сообщения MTU.</p>
-                        </div>
-                        <select id="toggleICMP" onchange="toggleService('icmp', this.value)" style="width: 140px;">
-                            <option value="true">Включено</option>
-                            <option value="false">Выключено</option>
-                        </select>
-                    </div>
-
-                    <!-- Toggle OpenVPN -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>🔒 OpenVPN Сервер (1194/UDP)</h4>
-                            <p>Входящие подключения клиентов OpenVPN.</p>
-                        </div>
-                        <select id="toggleOpenVPN" onchange="toggleService('openvpn', this.value)" style="width: 140px;">
-                            <option value="false">Выключено</option>
-                            <option value="true">Включено</option>
-                        </select>
-                    </div>
-
-                    <!-- Toggle WireGuard -->
-                    <div class="toggle-card">
-                        <div class="toggle-info">
-                            <h4>⚡ WireGuard Сервер (51820/UDP)</h4>
-                            <p>Входящие туннели WireGuard.</p>
-                        </div>
-                        <select id="toggleWireGuard" onchange="toggleService('wireguard', this.value)" style="width: 140px;">
-                            <option value="false">Выключено</option>
-                            <option value="true">Включено</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Custom Input Ports -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Кастомные порты шлюза (INPUT)</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Дополнительные порты, открытые непосредственно на самом шлюзе (мониторинг, кастомный софт).
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="customInputTable">
-                            <thead>
-                                <tr>
-                                    <th>Протокол</th>
-                                    <th>Порт</th>
-                                    <th>Доступ (Источник)</th>
-                                    <th>Комментарий</th>
-                                    <th style="text-align: right;">Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customInputBody">
-                                <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Кастомных портов нет</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">+ Открыть дополнительный порт</h4>
-                        <div class="input-group">
-                            <select id="inpProto" style="width: 90px;">
-                                <option value="tcp">TCP</option>
-                                <option value="udp">UDP</option>
-                            </select>
-                            <input type="number" id="inpPort" placeholder="Порт (напр. 10050)" style="flex: 1; min-width: 130px;">
-                            <select id="inpAccess" style="width: 190px;">
-                                <option value="admin">Только @admin_ips (Белый список)</option>
-                                <option value="lan">Только LAN (Локалка)</option>
-                                <option value="all">Всем (Весь мир)</option>
-                            </select>
-                            <input type="text" id="inpComment" placeholder="Комментарий" style="flex: 1.5; min-width: 140px;">
-                            <button class="btn btn-primary" onclick="addCustomInput()">Открыть</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 3: Whitelist (@admin_ips) -->
-            <div id="tab-whitelist" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Доверенные IP-адреса (@admin_ips)</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Доступ ко всем закрытым сервисам шлюза.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="whitelistTable">
-                            <thead>
-                                <tr>
-                                    <th>IP Адрес / Подсеть</th>
-                                    <th>Комментарий</th>
-                                    <th style="text-align: right;">Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody id="whitelistBody">
-                                <tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Добавить доверенный IP в сет</h4>
-                        <div class="input-group">
-                            <input type="text" id="newIp" placeholder="IP адрес или CIDR" style="flex: 1; min-width: 160px;">
-                            <input type="text" id="newIpComment" placeholder="Комментарий (напр: Офис)" style="flex: 1.5; min-width: 160px;">
-                            <button class="btn btn-primary" onclick="addWhitelistIp()">+ Добавить</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 4: Port Forwards (DNAT) -->
-            <div id="tab-forwards" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Проброс входящих портов (DNAT)</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Перенаправление трафика с внешнего WAN на внутреннюю клиентскую ВМ.
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="forwardsTable">
-                            <thead>
-                                <tr>
-                                    <th>Протокол</th>
-                                    <th>Входящий порт (WAN)</th>
-                                    <th>Внутренний сервер (LAN)</th>
-                                    <th>Порт назначения</th>
-                                    <th>Комментарий</th>
-                                    <th style="text-align: right;">Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody id="forwardsBody">
-                                <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Создать новый проброс порта</h4>
-                        <div class="input-group">
-                            <select id="fwdProto" style="width: 90px;">
-                                <option value="tcp">TCP</option>
-                                <option value="udp">UDP</option>
-                            </select>
-                            <input type="number" id="fwdExtPort" placeholder="WAN Порт (напр. 33899)" style="flex: 1; min-width: 120px;">
-                            <input type="text" id="fwdIntIp" placeholder="LAN IP (напр. 192.168.1.10)" style="flex: 1.2; min-width: 140px;">
-                            <input type="number" id="fwdIntPort" placeholder="LAN Порт (напр. 3389)" style="flex: 1; min-width: 120px;">
-                            <input type="text" id="fwdComment" placeholder="Комментарий" style="flex: 1.2; min-width: 120px;">
-                            <button class="btn btn-primary" onclick="addPortForward()">+ Создать</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 5: Fail2ban -->
-            <div id="tab-fail2ban" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Блокировки (Fail2ban + NFTables)</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Автоматическая блокировка брутфорс-атак на уровне ядра.
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" onclick="loadFail2ban()">Обновить</button>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table id="fail2banTable">
-                            <thead>
-                                <tr>
-                                    <th>Заблокированный IP</th>
-                                    <th>Причина (Jail)</th>
-                                    <th style="text-align: right;">Действие</th>
-                                </tr>
-                            </thead>
-                            <tbody id="fail2banBody">
-                                <tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Заблокированных адресов нет</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--panel-border);">
-                        <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Ручная блокировка IP</h4>
-                        <div class="input-group">
-                            <input type="text" id="banIpInput" placeholder="IP адрес для бана" style="flex: 2; min-width: 180px;">
-                            <button class="btn btn-danger" onclick="manualBanIp()">🚫 Забанить</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab 6: Editor -->
-            <div id="tab-editor" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">Редактор /etc/nftables.conf</div>
-                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                Перед сохранением файл обязательно тестируется на корректность синтаксиса.
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn" style="background: rgba(255,255,255,0.08);" onclick="testConfigSyntax()">🔍 Проверить синтаксис</button>
-                            <button class="btn btn-success" onclick="applyConfigFile()">💾 Сохранить и применить</button>
-                        </div>
-                    </div>
-                    <textarea id="configEditor" class="code-editor" spellcheck="false"></textarea>
-                </div>
-            </div>
-
-            <!-- Tab 7: NAT Connections -->
-            <div id="tab-connections" class="tab-content">
-                <div class="panel">
-                    <div class="panel-header">
-                        <div class="panel-title">Активные сессии (Conntrack)</div>
-                        <button class="btn btn-primary" onclick="loadConnections()">Обновить</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table id="connTable">
-                            <thead>
-                                <tr>
-                                    <th>Протокол</th>
-                                    <th>Источник (LAN)</th>
-                                    <th>Назначение (WAN)</th>
-                                    <th>Статус TCP</th>
-                                    <th>Таймаут (сек)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="connBody">
-                                <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Нажмите "Обновить" для загрузки сессий</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
+    <!-- Main Centered Container -->
+    <div class="main-container">
+        <div id="alertBox" class="alert"></div>
+
+        <!-- Tab 1: Dashboard -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="grid-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Hostname</div>
+                    <div class="stat-value" id="statHostname">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">IP Forwarding</div>
+                    <div class="stat-value" id="statForwarding" style="color: var(--success);">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Fail2ban</div>
+                    <div class="stat-value" id="statFail2ban" style="color: var(--success);">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Доверенных IP</div>
+                    <div class="stat-value" id="statWhitelistCount">0</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Сетевые интерфейсы</div>
+                    <button class="btn btn-primary" onclick="loadDashboard()">Обновить</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="ifaceTable">
+                        <thead>
+                            <tr>
+                                <th>Интерфейс</th>
+                                <th>Статус</th>
+                                <th>IP Адрес</th>
+                                <th>MAC Адрес</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ifaceList">
+                            <tr><td colspan="4" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Input Rules & Toggles -->
+        <div id="tab-inputrules" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Службы шлюза (INPUT)</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Управление портами самого шлюза.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toggle SSH -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>🔑 SSH Доступ (порт 22)</h4>
+                        <p>Удаленный вход по консоли.</p>
+                    </div>
+                    <select id="toggleSSH" onchange="toggleService('ssh', this.value)" style="width: 200px;">
+                        <option value="admin_ips">Только @admin_ips</option>
+                        <option value="all">Разрешен всем (0.0.0.0/0)</option>
+                    </select>
+                </div>
+
+                <!-- Toggle HTTP 80 -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>🌐 HTTP Веб-сервер (порт 80)</h4>
+                        <p id="httpDesc">Локальный HTTP на шлюзе (ACME / Let's Encrypt).</p>
+                    </div>
+                    <div id="httpWrapper">
+                        <select id="toggleHTTP" onchange="toggleService('http', this.value)" style="width: 130px;">
+                            <option value="false">Выключено</option>
+                            <option value="true">Включено</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Toggle HTTPS 443 -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>🔒 HTTPS Веб-сервер (порт 443)</h4>
+                        <p id="httpsDesc">Локальный HTTPS на шлюзе.</p>
+                    </div>
+                    <div id="httpsWrapper">
+                        <select id="toggleHTTPS" onchange="toggleService('https', this.value)" style="width: 130px;">
+                            <option value="false">Выключено</option>
+                            <option value="true">Включено</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Toggle ICMP -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>📡 ICMP Ping</h4>
+                        <p>Ответы на echo-request.</p>
+                    </div>
+                    <select id="toggleICMP" onchange="toggleService('icmp', this.value)" style="width: 130px;">
+                        <option value="true">Включено</option>
+                        <option value="false">Выключено</option>
+                    </select>
+                </div>
+
+                <!-- Toggle OpenVPN -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>🔒 OpenVPN (1194/UDP)</h4>
+                        <p>Входящие клиенты OpenVPN.</p>
+                    </div>
+                    <select id="toggleOpenVPN" onchange="toggleService('openvpn', this.value)" style="width: 130px;">
+                        <option value="false">Выключено</option>
+                        <option value="true">Включено</option>
+                    </select>
+                </div>
+
+                <!-- Toggle WireGuard -->
+                <div class="toggle-card">
+                    <div class="toggle-info">
+                        <h4>⚡ WireGuard (51820/UDP)</h4>
+                        <p>Входящие туннели WireGuard.</p>
+                    </div>
+                    <select id="toggleWireGuard" onchange="toggleService('wireguard', this.value)" style="width: 130px;">
+                        <option value="false">Выключено</option>
+                        <option value="true">Включено</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Custom Input Ports -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Кастомные порты шлюза</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Дополнительные порты, открытые на шлюзе (Zabbix, мониторинг и т.д.).
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="customInputTable">
+                        <thead>
+                            <tr>
+                                <th>Протокол</th>
+                                <th>Порт</th>
+                                <th>Доступ</th>
+                                <th>Комментарий</th>
+                                <th style="text-align: right;">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customInputBody">
+                            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Кастомных портов нет</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--panel-border);">
+                    <h4 style="font-size: 0.88rem; margin-bottom: 0.65rem;">+ Открыть порт</h4>
+                    <div class="input-group">
+                        <select id="inpProto" style="width: 85px;">
+                            <option value="tcp">TCP</option>
+                            <option value="udp">UDP</option>
+                        </select>
+                        <input type="number" id="inpPort" placeholder="Порт (напр. 10050)" style="flex: 1; min-width: 120px;">
+                        <select id="inpAccess" style="width: 180px;">
+                            <option value="admin">Только @admin_ips</option>
+                            <option value="lan">Только LAN</option>
+                            <option value="all">Всем (Весь мир)</option>
+                        </select>
+                        <input type="text" id="inpComment" placeholder="Комментарий" style="flex: 1.5; min-width: 130px;">
+                        <button class="btn btn-primary" onclick="addCustomInput()">Открыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Whitelist (@admin_ips) -->
+        <div id="tab-whitelist" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Доверенные IP (@admin_ips)</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Полный доступ к закрытым сервисам шлюза.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="whitelistTable">
+                        <thead>
+                            <tr>
+                                <th>IP Адрес / Подсеть</th>
+                                <th>Комментарий</th>
+                                <th style="text-align: right;">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="whitelistBody">
+                            <tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--panel-border);">
+                    <h4 style="font-size: 0.88rem; margin-bottom: 0.65rem;">Добавить IP в сет</h4>
+                    <div class="input-group">
+                        <input type="text" id="newIp" placeholder="IP адрес или CIDR" style="flex: 1; min-width: 150px;">
+                        <input type="text" id="newIpComment" placeholder="Комментарий (напр: Офис)" style="flex: 1.5; min-width: 150px;">
+                        <button class="btn btn-primary" onclick="addWhitelistIp()">+ Добавить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Port Forwards (DNAT) -->
+        <div id="tab-forwards" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Проброс портов (DNAT)</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Перенаправление трафика с внешнего WAN на внутреннюю ВМ.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="forwardsTable">
+                        <thead>
+                            <tr>
+                                <th>Протокол</th>
+                                <th>WAN Порт</th>
+                                <th>LAN Сервер</th>
+                                <th>LAN Порт</th>
+                                <th>Комментарий</th>
+                                <th style="text-align: right;">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forwardsBody">
+                            <tr><td colspan="6" style="text-align:center; color: var(--text-muted);">Загрузка...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--panel-border);">
+                    <h4 style="font-size: 0.88rem; margin-bottom: 0.65rem;">Создать проброс</h4>
+                    <div class="input-group">
+                        <select id="fwdProto" style="width: 85px;">
+                            <option value="tcp">TCP</option>
+                            <option value="udp">UDP</option>
+                        </select>
+                        <input type="number" id="fwdExtPort" placeholder="WAN Порт (напр. 33899)" style="flex: 1; min-width: 120px;">
+                        <input type="text" id="fwdIntIp" placeholder="LAN IP (напр. 10.10.10.2)" style="flex: 1.2; min-width: 130px;">
+                        <input type="number" id="fwdIntPort" placeholder="LAN Порт (напр. 3389)" style="flex: 1; min-width: 110px;">
+                        <input type="text" id="fwdComment" placeholder="Комментарий" style="flex: 1.2; min-width: 110px;">
+                        <button class="btn btn-primary" onclick="addPortForward()">+ Создать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Fail2ban -->
+        <div id="tab-fail2ban" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Блокировки Fail2ban</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Блокировка брутфорс-атак на уровне nftables.
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadFail2ban()">Обновить</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="fail2banTable">
+                        <thead>
+                            <tr>
+                                <th>Заблокированный IP</th>
+                                <th>Причина</th>
+                                <th style="text-align: right;">Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fail2banBody">
+                            <tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Заблокированных адресов нет</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--panel-border);">
+                    <h4 style="font-size: 0.88rem; margin-bottom: 0.65rem;">Ручная блокировка IP</h4>
+                    <div class="input-group">
+                        <input type="text" id="banIpInput" placeholder="IP адрес" style="flex: 2; min-width: 160px;">
+                        <button class="btn btn-danger" onclick="manualBanIp()">🚫 Забанить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 6: Editor -->
+        <div id="tab-editor" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">Редактор /etc/nftables.conf</div>
+                        <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                            Прямая правка файла с обязательным тестом синтаксиса.
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn" style="background: rgba(255,255,255,0.06);" onclick="testConfigSyntax()">🔍 Проверить</button>
+                        <button class="btn btn-success" onclick="applyConfigFile()">💾 Применить</button>
+                    </div>
+                </div>
+                <textarea id="configEditor" class="code-editor" spellcheck="false"></textarea>
+            </div>
+        </div>
+
+        <!-- Tab 7: NAT Connections -->
+        <div id="tab-connections" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Активные сессии (Conntrack)</div>
+                    <button class="btn btn-primary" onclick="loadConnections()">Обновить</button>
+                </div>
+                <div class="table-responsive">
+                    <table id="connTable">
+                        <thead>
+                            <tr>
+                                <th>Протокол</th>
+                                <th>Источник (LAN)</th>
+                                <th>Назначение (WAN)</th>
+                                <th>Статус TCP</th>
+                                <th>Таймаут (сек)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="connBody">
+                            <tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Нажмите "Обновить" для загрузки сессий</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <script>
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-        }
-
-        function closeSidebarIfMobile() {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('open');
-            }
-        }
-
         function showAlert(msg, type = 'success') {
             const box = document.getElementById('alertBox');
             box.className = `alert alert-${type}`;
             box.innerText = msg;
             box.style.display = 'block';
-            setTimeout(() => { box.style.display = 'none'; }, 4500);
+            setTimeout(() => { box.style.display = 'none'; }, 4000);
         }
 
         function switchTab(tabId) {
-            closeSidebarIfMobile();
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
@@ -946,31 +918,29 @@
                 document.getElementById('toggleOpenVPN').value = data.toggles.allow_openvpn ? 'true' : 'false';
                 document.getElementById('toggleWireGuard').value = data.toggles.allow_wireguard ? 'true' : 'false';
 
-                // HTTP (port 80) conflict check
                 const httpWrapper = document.getElementById('httpWrapper');
                 const httpDesc = document.getElementById('httpDesc');
                 if (data.toggles.http_conflict) {
-                    httpWrapper.innerHTML = `<span class="badge badge-conflict">Заблокировано (порт занят DNAT пробросом)</span>`;
+                    httpWrapper.innerHTML = `<span class="badge badge-conflict">DNAT конфликт</span>`;
                     httpDesc.innerText = 'Порт 80 перенаправлен на внутреннюю ВМ через правило DNAT.';
                 } else {
                     httpWrapper.innerHTML = `
-                        <select id="toggleHTTP" onchange="toggleService('http', this.value)" style="width: 140px;">
+                        <select id="toggleHTTP" onchange="toggleService('http', this.value)" style="width: 130px;">
                             <option value="false" ${!data.toggles.allow_http ? 'selected' : ''}>Выключено</option>
                             <option value="true" ${data.toggles.allow_http ? 'selected' : ''}>Включено</option>
                         </select>
                     `;
-                    httpDesc.innerText = 'Локальный HTTP на шлюзе (для ACME / Let\'s Encrypt).';
+                    httpDesc.innerText = 'Локальный HTTP на шлюзе (ACME / Let\'s Encrypt).';
                 }
 
-                // HTTPS (port 443) conflict check
                 const httpsWrapper = document.getElementById('httpsWrapper');
                 const httpsDesc = document.getElementById('httpsDesc');
                 if (data.toggles.https_conflict) {
-                    httpsWrapper.innerHTML = `<span class="badge badge-conflict">Заблокировано (порт занят DNAT пробросом)</span>`;
+                    httpsWrapper.innerHTML = `<span class="badge badge-conflict">DNAT конфликт</span>`;
                     httpsDesc.innerText = 'Порт 443 перенаправлен на внутреннюю ВМ через правило DNAT.';
                 } else {
                     httpsWrapper.innerHTML = `
-                        <select id="toggleHTTPS" onchange="toggleService('https', this.value)" style="width: 140px;">
+                        <select id="toggleHTTPS" onchange="toggleService('https', this.value)" style="width: 130px;">
                             <option value="false" ${!data.toggles.allow_https ? 'selected' : ''}>Выключено</option>
                             <option value="true" ${data.toggles.allow_https ? 'selected' : ''}>Включено</option>
                         </select>
@@ -993,7 +963,7 @@
                                 <td><span class="badge ${badgeClass}">${r.access.toUpperCase()}</span></td>
                                 <td style="color: var(--text-muted);">${r.comment || '-'}</td>
                                 <td style="text-align: right;">
-                                    <button class="btn btn-danger" onclick="deleteCustomInput('${r.id}')" style="min-height: 30px; padding: 0.25rem 0.6rem;">Удалить</button>
+                                    <button class="btn btn-danger" onclick="deleteCustomInput('${r.id}')" style="min-height: 28px; padding: 0.2rem 0.5rem; font-size: 0.78rem;">Удалить</button>
                                 </td>
                             </tr>
                         `;
@@ -1047,7 +1017,7 @@
                                 <td style="font-family: monospace; font-weight: 600;">${item.ip}</td>
                                 <td style="color: var(--text-muted);">${item.comment || '-'}</td>
                                 <td style="text-align: right;">
-                                    <button class="btn btn-danger" onclick="deleteWhitelistIp('${item.ip}')" style="min-height: 30px; padding: 0.25rem 0.6rem;">Удалить</button>
+                                    <button class="btn btn-danger" onclick="deleteWhitelistIp('${item.ip}')" style="min-height: 28px; padding: 0.2rem 0.5rem; font-size: 0.78rem;">Удалить</button>
                                 </td>
                             </tr>
                         `;
@@ -1064,14 +1034,14 @@
             if (!ip) return showAlert('Укажите IP адрес', 'danger');
 
             await api('/api/whitelist/add', 'POST', { ip, comment });
-            showAlert(`IP ${ip} успешно добавлен в сет admin_ips`);
+            showAlert(`IP ${ip} успешно добавлен`);
             document.getElementById('newIp').value = '';
             document.getElementById('newIpComment').value = '';
             loadWhitelist();
         }
 
         async function deleteWhitelistIp(ip) {
-            if (!confirm(`Удалить IP ${ip} из белого списка?`)) return;
+            if (!confirm(`Удалить IP ${ip}?`)) return;
             await api('/api/whitelist/delete', 'POST', { ip });
             showAlert(`IP ${ip} удален`);
             loadWhitelist();
@@ -1093,7 +1063,7 @@
                                 <td style="font-family: monospace; font-weight: 600;">:${f.int_port}</td>
                                 <td style="color: var(--text-muted);">${f.comment || '-'}</td>
                                 <td style="text-align: right;">
-                                    <button class="btn btn-danger" onclick="deletePortForward('${f.id}')" style="min-height: 30px; padding: 0.25rem 0.6rem;">Удалить</button>
+                                    <button class="btn btn-danger" onclick="deletePortForward('${f.id}')" style="min-height: 28px; padding: 0.2rem 0.5rem; font-size: 0.78rem;">Удалить</button>
                                 </td>
                             </tr>
                         `;
@@ -1142,15 +1112,15 @@
                         tbody.innerHTML += `
                             <tr>
                                 <td style="font-family: monospace; color: #f87171; font-weight: 600;">${ip}</td>
-                                <td>sshd (брутфорс паролей)</td>
+                                <td>sshd (брутфорс)</td>
                                 <td style="text-align: right;">
-                                    <button class="btn btn-primary" onclick="unbanIp('${ip}')" style="min-height: 30px; padding: 0.25rem 0.6rem;">Разблокировать</button>
+                                    <button class="btn btn-primary" onclick="unbanIp('${ip}')" style="min-height: 28px; padding: 0.2rem 0.5rem; font-size: 0.78rem;">Разблокировать</button>
                                 </td>
                             </tr>
                         `;
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Активных блокировок нет</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted);">Заблокированных адресов нет</td></tr>';
                 }
             } catch (e) {}
         }
@@ -1182,18 +1152,18 @@
             const content = document.getElementById('configEditor').value;
             const res = await api('/api/config/test', 'POST', { content });
             if (res && res.valid) {
-                showAlert('Синтаксис корректен! Ошибок не обнаружено.', 'success');
+                showAlert('Синтаксис корректен!', 'success');
             } else if (res) {
-                showAlert(`Синтаксическая ошибка: ${res.error}`, 'danger');
+                showAlert(`Ошибка: ${res.error}`, 'danger');
             }
         }
 
         async function applyConfigFile() {
-            if (!confirm('Вы уверены, что хотите применить этот конфиг? Перед сохранением будет выполнена проверка синтаксиса.')) return;
+            if (!confirm('Применить эту конфигурацию?')) return;
             const content = document.getElementById('configEditor').value;
             const res = await api('/api/config/apply', 'POST', { content });
             if (res && res.success) {
-                showAlert('Конфигурация успешно проверена и применена в ядро!', 'success');
+                showAlert('Конфигурация успешно применена!', 'success');
             }
         }
 
@@ -1216,7 +1186,7 @@
                         `;
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Активных трансляций не обнаружено</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">Активных сессий нет</td></tr>';
                 }
             } catch (e) {}
         }
@@ -1227,7 +1197,6 @@
             });
         }
 
-        // Start
         checkAuth();
     </script>
 </body>
