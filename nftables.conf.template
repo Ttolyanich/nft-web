@@ -2,8 +2,8 @@
 
 flush ruleset
 
-define WAN = __WAN_IFACE__
-define LAN = __LAN_IFACE__
+define WAN = "__WAN_IFACE__"
+define LAN = "__LAN_IFACE__"
 
 table ip filter {
         # Список доверенных IP-адресов администраторов

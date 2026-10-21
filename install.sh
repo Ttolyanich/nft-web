@@ -94,7 +94,8 @@ echo -e "${GREEN}✓ Fail2ban успешно настроен и активир�
 echo -e "\n${YELLOW}[4/6] Настройка сетевых интерфейсов шлюза...${NC}"
 
 DEFAULT_ROUTE_IFACE=$(ip -4 route show default 2>/dev/null | awk '{print $5}' | head -n1 || echo "")
-AVAILABLE_IFACES=($(ip -o link show | awk -F': ' '{print $2}' | grep -v -E 'lo|docker|veth' || true))
+DEFAULT_ROUTE_IFACE="${DEFAULT_ROUTE_IFACE%%@*}"
+AVAILABLE_IFACES=($(ip -o link show | awk -F': ' '{print $2}' | cut -d'@' -f1 | grep -v -E '^lo$|docker|veth' || true))
 
 if [ ${#AVAILABLE_IFACES[@]} -eq 0 ]; then
     echo -e "${RED}[ERROR] В системе не обнаружено активных сетевых интерфейсов!${NC}"
@@ -144,6 +145,9 @@ if [[ "$LAN_CHOICE" =~ ^[0-9]+$ ]] && [ "$LAN_CHOICE" -ge 1 ] && [ "$LAN_CHOICE"
 else
     LAN_IFACE="$LAN_CHOICE"
 fi
+
+WAN_IFACE="${WAN_IFACE%%@*}"
+LAN_IFACE="${LAN_IFACE%%@*}"
 
 echo -e "Выбран WAN (интернет): ${GREEN}${WAN_IFACE}${NC}"
 echo -e "Выбран LAN (локалка):  ${GREEN}${LAN_IFACE}${NC}"
