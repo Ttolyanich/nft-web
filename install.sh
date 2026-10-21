@@ -10,6 +10,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}======================================================${NC}"
@@ -36,7 +37,6 @@ else
     ADMIN_PASS="${INPUT_PASS}"
 fi
 
-# Порт по умолчанию: 8443
 WEB_PORT="8443"
 
 # 3. Sysctl Gateway Optimization (IP Forwarding)
@@ -59,8 +59,8 @@ net.ipv4.icmp_echo_ignore_broadcasts = 1
 net.ipv4.tcp_syncookies = 1
 EOF
 
-sysctl --system > /dev/null
-echo -e "${GREEN}✓ IP Forwarding успешно включен в /etc/sysctl.d/99-gateway.conf${NC}"
+sysctl --system > /dev/null 2>&1 || sysctl -p /etc/sysctl.d/99-gateway.conf > /dev/null 2>&1 || true
+echo -e "${GREEN}✓ IP Forwarding включен в /etc/sysctl.d/99-gateway.conf${NC}"
 
 # 4. Установка пакетов
 echo -e "\n${YELLOW}[2/6] Проверка и установка системных пакетов (nftables, fail2ban, curl, golang)...${NC}"
@@ -72,14 +72,11 @@ echo -e "${GREEN}✓ Системные пакеты установлены.${NC
 echo -e "\n${YELLOW}[3/6] Настройка Fail2ban (banaction = nftables)...${NC}"
 cat << 'EOF' > /etc/fail2ban/jail.local
 [DEFAULT]
-# Использовать нативный nftables для бана в ядре
 banaction = nftables-multiport
 banaction_allports = nftables-allports
 
-# Игнорировать локальные приватные сети
 ignoreip = 127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
 
-# Время бана: 1 час, окно детекции: 10 минут, попыток: 5
 bantime = 1h
 findtime = 10m
 maxretry = 5
@@ -90,33 +87,69 @@ port = ssh
 mode = aggressive
 EOF
 
-systemctl enable --now fail2ban
+systemctl enable --now fail2ban > /dev/null 2>&1 || true
 echo -e "${GREEN}✓ Fail2ban успешно настроен и активирован.${NC}"
 
-# 6. Детекция сетевых интерфейсов
-echo -e "\n${YELLOW}[4/6] Определение сетевых интерфейсов...${NC}"
-DEFAULT_ROUTE_IFACE=$(ip -4 route show default | awk '{print $5}' | head -n1 || echo "")
-ALL_IFACES=($(ip -o link show | awk -F': ' '{print $2}' | grep -v 'lo' || true))
+# 6. Интерактивный выбор сетевых интерфейсов с меню
+echo -e "\n${YELLOW}[4/6] Настройка сетевых интерфейсов шлюза...${NC}"
 
-WAN_IFACE="${DEFAULT_ROUTE_IFACE}"
-if [ -z "$WAN_IFACE" ] && [ ${#ALL_IFACES[@]} -gt 0 ]; then
-    WAN_IFACE="${ALL_IFACES[0]}"
+DEFAULT_ROUTE_IFACE=$(ip -4 route show default 2>/dev/null | awk '{print $5}' | head -n1 || echo "")
+AVAILABLE_IFACES=($(ip -o link show | awk -F': ' '{print $2}' | grep -v -E 'lo|docker|veth' || true))
+
+if [ ${#AVAILABLE_IFACES[@]} -eq 0 ]; then
+    echo -e "${RED}[ERROR] В системе не обнаружено активных сетевых интерфейсов!${NC}"
+    exit 1
 fi
 
-LAN_IFACE=""
-for iface in "${ALL_IFACES[@]}"; do
-    if [ "$iface" != "$WAN_IFACE" ]; then
-        LAN_IFACE="$iface"
+echo -e "Доступные сетевые интерфейсы в системе:"
+DEFAULT_WAN_IDX=1
+DEFAULT_LAN_IDX=1
+
+for idx in "${!AVAILABLE_IFACES[@]}"; do
+    num=$((idx + 1))
+    ifname="${AVAILABLE_IFACES[$idx]}"
+    ip_addr=$(ip -4 addr show dev "$ifname" 2>/dev/null | grep "inet " | awk '{print $2}' | head -n1 || echo "нет IP")
+    
+    extra=""
+    if [ "$ifname" == "$DEFAULT_ROUTE_IFACE" ]; then
+        extra=" ${CYAN}[Основной маршрут / Интернет]${NC}"
+        DEFAULT_WAN_IDX=$num
+    fi
+    echo -e "  ${YELLOW}${num})${NC} ${GREEN}${ifname}${NC} (${ip_addr})${extra}"
+done
+
+# Определение индекса по умолчанию для LAN (любой отличный от WAN)
+for idx in "${!AVAILABLE_IFACES[@]}"; do
+    num=$((idx + 1))
+    if [ "$num" -ne "$DEFAULT_WAN_IDX" ]; then
+        DEFAULT_LAN_IDX=$num
         break
     fi
 done
 
-if [ -z "$LAN_IFACE" ]; then
-    LAN_IFACE="ens19"
+# Интерактивный выбор WAN
+echo ""
+read -r -p "Выберите внешний интерфейс WAN [1-${#AVAILABLE_IFACES[@]}, по умолчанию ${DEFAULT_WAN_IDX} (${AVAILABLE_IFACES[$((DEFAULT_WAN_IDX-1))]}): " WAN_CHOICE
+WAN_CHOICE="${WAN_CHOICE:-$DEFAULT_WAN_IDX}"
+
+if [[ "$WAN_CHOICE" =~ ^[0-9]+$ ]] && [ "$WAN_CHOICE" -ge 1 ] && [ "$WAN_CHOICE" -le ${#AVAILABLE_IFACES[@]} ]; then
+    WAN_IFACE="${AVAILABLE_IFACES[$((WAN_CHOICE-1))]}"
+else
+    WAN_IFACE="$WAN_CHOICE"
 fi
 
-echo -e "Внешний интерфейс (WAN): ${GREEN}${WAN_IFACE}${NC}"
-echo -e "Внутренний интерфейс (LAN): ${GREEN}${LAN_IFACE}${NC}"
+# Интерактивный выбор LAN
+read -r -p "Выберите внутренний интерфейс LAN [1-${#AVAILABLE_IFACES[@]}, по умолчанию ${DEFAULT_LAN_IDX} (${AVAILABLE_IFACES[$((DEFAULT_LAN_IDX-1))]}): " LAN_CHOICE
+LAN_CHOICE="${LAN_CHOICE:-$DEFAULT_LAN_IDX}"
+
+if [[ "$LAN_CHOICE" =~ ^[0-9]+$ ]] && [ "$LAN_CHOICE" -ge 1 ] && [ "$LAN_CHOICE" -le ${#AVAILABLE_IFACES[@]} ]; then
+    LAN_IFACE="${AVAILABLE_IFACES[$((LAN_CHOICE-1))]}"
+else
+    LAN_IFACE="$LAN_CHOICE"
+fi
+
+echo -e "Выбран WAN (интернет): ${GREEN}${WAN_IFACE}${NC}"
+echo -e "Выбран LAN (локалка):  ${GREEN}${LAN_IFACE}${NC}"
 
 # 7. Развертывание чистого /etc/nftables.conf
 echo -e "\n${YELLOW}[5/6] Развертывание шаблона /etc/nftables.conf...${NC}"
@@ -141,10 +174,8 @@ cd "${SCRIPT_DIR}"
 go build -ldflags="-s -w" -o /usr/local/bin/nft-web main.go
 chmod +x /usr/local/bin/nft-web
 
-# Генерация SHA256 хеша пароля
 PASS_HASH=$(echo -n "${ADMIN_PASS}" | sha256sum | awk '{print $1}')
 
-# Запись конфигурационного файла службы
 cat << EOF > /etc/nft-web.conf
 {
   "listen": "0.0.0.0:${WEB_PORT}",
@@ -155,7 +186,6 @@ cat << EOF > /etc/nft-web.conf
 EOF
 chmod 600 /etc/nft-web.conf
 
-# Создание systemd unit
 cat << 'EOF' > /etc/systemd/system/nft-web.service
 [Unit]
 Description=NFTables Gateway Web Manager
@@ -177,7 +207,7 @@ EOF
 systemctl daemon-reload
 systemctl enable --now nft-web
 
-HOST_IP=$(ip -4 addr show dev "${WAN_IFACE}" | grep "inet " | awk '{print $2}' | cut -d/ -f1 | head -n1 || echo "IP_ШЛЮЗА")
+HOST_IP=$(ip -4 addr show dev "${WAN_IFACE}" 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d/ -f1 | head -n1 || echo "IP_ШЛЮЗА")
 
 echo -e "\n${GREEN}======================================================${NC}"
 echo -e "${GREEN}          УСТАНОВКА УСПЕШНО ЗАВЕРШЕНА!               ${NC}"
