@@ -399,6 +399,33 @@ func handleGetWhitelist(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, map[string]interface{}{"elements": items}, http.StatusOK)
 }
 
+func updateAdminIpsInContent(content string, items []WhitelistItem) string {
+	var b strings.Builder
+	b.WriteString("set admin_ips {\n")
+	b.WriteString("                type ipv4_addr\n")
+	b.WriteString("                flags interval\n")
+	b.WriteString("                elements = {\n")
+	b.WriteString("                        127.0.0.1,\n")
+	for _, item := range items {
+		if item.IP == "127.0.0.1" || item.IP == "" {
+			continue
+		}
+		if item.Comment != "" {
+			b.WriteString(fmt.Sprintf("                        %s,  # %s\n", item.IP, item.Comment))
+		} else {
+			b.WriteString(fmt.Sprintf("                        %s,\n", item.IP))
+		}
+	}
+	b.WriteString("                }\n")
+	b.WriteString("        }")
+
+	reSet := regexp.MustCompile(`(?s)set\s+admin_ips\s*\{.*?\n\s*\}`)
+	if reSet.MatchString(content) {
+		return reSet.ReplaceAllString(content, b.String())
+	}
+	return content
+}
+
 func handleAddWhitelist(w http.ResponseWriter, r *http.Request) {
 	configMutex.Lock()
 	defer configMutex.Unlock()
@@ -416,25 +443,39 @@ func handleAddWhitelist(w http.ResponseWriter, r *http.Request) {
 	}
 	req.Comment = sanitizeComment(req.Comment)
 
-	// Add to kernel
-	exec.Command("nft", "add", "element", "ip", "filter", "admin_ips", fmt.Sprintf("{ %s }", cleanIP)).Run()
+	// Read existing items
+	items, _ := parseWhitelistFromConfig(settings.NFTConfig)
+	alreadyExists := false
+	for _, it := range items {
+		if it.IP == cleanIP {
+			alreadyExists = true
+			break
+		}
+	}
+	if !alreadyExists {
+		items = append(items, WhitelistItem{IP: cleanIP, Comment: req.Comment})
+	}
 
 	data, err := os.ReadFile(settings.NFTConfig)
 	if err != nil {
 		jsonError(w, "Не удается прочитать конфиг", http.StatusInternalServerError)
 		return
 	}
-	content := string(data)
 
-	reElements := regexp.MustCompile(`(?s)(set\s+admin_ips\s*\{[^}]*elements\s*=\s*\{)([^}]*)(\})`)
-	if reElements.MatchString(content) {
-		entry := fmt.Sprintf("\n                        %s,", cleanIP)
-		if req.Comment != "" {
-			entry = fmt.Sprintf("\n                        %s,  # %s", cleanIP, req.Comment)
+	newContent := updateAdminIpsInContent(string(data), items)
+
+	// Validate before saving
+	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("nft_test_%d.conf", time.Now().UnixNano()))
+	if err := os.WriteFile(tmpFile, []byte(newContent), 0644); err == nil {
+		defer os.Remove(tmpFile)
+		if out, err := exec.Command("nft", "-c", "-f", tmpFile).CombinedOutput(); err != nil {
+			jsonError(w, "Ошибка синтаксиса NFT: "+string(out), http.StatusBadRequest)
+			return
 		}
-		newContent := reElements.ReplaceAllString(content, "${1}${2}"+entry+"\n                ${3}")
-		os.WriteFile(settings.NFTConfig, []byte(newContent), 0644)
 	}
+
+	os.WriteFile(settings.NFTConfig, []byte(newContent), 0644)
+	exec.Command("nft", "-f", settings.NFTConfig).Run()
 
 	jsonResponse(w, map[string]bool{"success": true}, http.StatusOK)
 }
@@ -450,20 +491,23 @@ func handleDeleteWhitelist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cleanIP := strings.TrimSpace(req.IP)
-	exec.Command("nft", "delete", "element", "ip", "filter", "admin_ips", fmt.Sprintf("{ %s }", cleanIP)).Run()
+	items, _ := parseWhitelistFromConfig(settings.NFTConfig)
+	var newItems []WhitelistItem
+	for _, it := range items {
+		if it.IP != cleanIP && it.IP != "127.0.0.1" {
+			newItems = append(newItems, it)
+		}
+	}
 
 	data, err := os.ReadFile(settings.NFTConfig)
-	if err == nil {
-		lines := strings.Split(string(data), "\n")
-		var newLines []string
-		for _, line := range lines {
-			if strings.Contains(line, cleanIP) && (strings.Contains(line, "#") || strings.Contains(line, ",")) {
-				continue
-			}
-			newLines = append(newLines, line)
-		}
-		os.WriteFile(settings.NFTConfig, []byte(strings.Join(newLines, "\n")), 0644)
+	if err != nil {
+		jsonError(w, "Ошибка чтения конфига", http.StatusInternalServerError)
+		return
 	}
+
+	newContent := updateAdminIpsInContent(string(data), newItems)
+	os.WriteFile(settings.NFTConfig, []byte(newContent), 0644)
+	exec.Command("nft", "-f", settings.NFTConfig).Run()
 
 	jsonResponse(w, map[string]bool{"success": true}, http.StatusOK)
 }
@@ -584,6 +628,17 @@ func handleGetInputRules(w http.ResponseWriter, r *http.Request) {
 	}, http.StatusOK)
 }
 
+func insertRuleAfterHook(content, chainName, rule string) string {
+	// Match hook line inside the chain
+	pattern := fmt.Sprintf(`(?s)(chain\s+%s\s*\{[^}]*?type\s+[^\n]+;\s*(?:policy\s+[^\n]+;)?\s*\n)`, chainName)
+	reHook := regexp.MustCompile(pattern)
+	if reHook.MatchString(content) {
+		return reHook.ReplaceAllString(content, "${1}"+rule+"\n")
+	}
+	// Fallback to inserting after chain opening if hook is somehow different
+	return strings.Replace(content, "chain "+chainName+" {", "chain "+chainName+" {\n"+rule, 1)
+}
+
 func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 	configMutex.Lock()
 	defer configMutex.Unlock()
@@ -597,7 +652,6 @@ func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prevent enabling HTTP/HTTPS if forwarded
 	forwards, _ := parseForwardsFromConfig(settings.NFTConfig)
 	if req.Service == "http" && req.Value == "true" {
 		for _, f := range forwards {
@@ -628,7 +682,7 @@ func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 		rule := "                icmp type { echo-reply, destination-unreachable, echo-request, time-exceeded } accept"
 		if req.Value == "true" {
 			if !strings.Contains(content, "icmp type") {
-				content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+				content = insertRuleAfterHook(content, "INPUT", rule)
 			}
 		} else {
 			re := regexp.MustCompile(`(?m)^\s*icmp type [^\n]+\n`)
@@ -639,20 +693,20 @@ func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 		re := regexp.MustCompile(`(?m)^\s*tcp dport 80 accept[^\n]*\n`)
 		content = re.ReplaceAllString(content, "")
 		if req.Value == "true" {
-			content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+			content = insertRuleAfterHook(content, "INPUT", rule)
 		}
 	case "https":
 		rule := "                tcp dport 443 accept # Web HTTPS"
 		re := regexp.MustCompile(`(?m)^\s*tcp dport 443 accept[^\n]*\n`)
 		content = re.ReplaceAllString(content, "")
 		if req.Value == "true" {
-			content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+			content = insertRuleAfterHook(content, "INPUT", rule)
 		}
 	case "openvpn":
 		rule := "                udp dport 1194 accept # OpenVPN"
 		if req.Value == "true" {
 			if !strings.Contains(content, "udp dport 1194") {
-				content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+				content = insertRuleAfterHook(content, "INPUT", rule)
 			}
 		} else {
 			re := regexp.MustCompile(`(?m)^\s*udp dport 1194 accept[^\n]*\n`)
@@ -662,7 +716,7 @@ func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 		rule := "                udp dport 51820 accept # WireGuard"
 		if req.Value == "true" {
 			if !strings.Contains(content, "udp dport 51820") {
-				content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+				content = insertRuleAfterHook(content, "INPUT", rule)
 			}
 		} else {
 			re := regexp.MustCompile(`(?m)^\s*udp dport 51820 accept[^\n]*\n`)
@@ -672,11 +726,10 @@ func handleToggleInput(w http.ResponseWriter, r *http.Request) {
 		reAll := regexp.MustCompile(`(?m)^\s*tcp dport 22 accept[^\n]*\n`)
 		content = reAll.ReplaceAllString(content, "")
 		if req.Value == "all" {
-			content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n                tcp dport 22 accept # SSH for all", 1)
+			content = insertRuleAfterHook(content, "INPUT", "                tcp dport 22 accept # SSH for all")
 		}
 	}
 
-	// Validate & Apply
 	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("nft_toggle_%d.conf", time.Now().UnixNano()))
 	os.WriteFile(tmpFile, []byte(content), 0644)
 	defer os.Remove(tmpFile)
@@ -724,7 +777,7 @@ func handleAddInputRule(w http.ResponseWriter, r *http.Request) {
 	}
 	content := string(data)
 
-	content = strings.Replace(content, "chain INPUT {", "chain INPUT {\n"+rule, 1)
+	content = insertRuleAfterHook(content, "INPUT", rule)
 
 	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("nft_input_%d.conf", time.Now().UnixNano()))
 	os.WriteFile(tmpFile, []byte(content), 0644)
