@@ -11,7 +11,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${BLUE}======================================================${NC}"
 echo -e "${BLUE}       NFTables Gateway & Web Manager Installer       ${NC}"
@@ -62,10 +62,10 @@ EOF
 sysctl --system > /dev/null 2>&1 || sysctl -p /etc/sysctl.d/99-gateway.conf > /dev/null 2>&1 || true
 echo -e "${GREEN}✓ IP Forwarding включен в /etc/sysctl.d/99-gateway.conf${NC}"
 
-# 4. Установка пакетов
-echo -e "\n${YELLOW}[2/6] Проверка и установка системных пакетов (nftables, fail2ban, curl, golang)...${NC}"
+# 4. Установка пакетов (без компилятора!)
+echo -e "\n${YELLOW}[2/6] Проверка и установка пакетов (nftables, fail2ban, curl)...${NC}"
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nftables fail2ban curl iproute2 golang-go > /dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nftables fail2ban curl iproute2 > /dev/null
 echo -e "${GREEN}✓ Системные пакеты установлены.${NC}"
 
 # 5. Настройка Fail2ban с нативным бэкендом nftables
@@ -118,7 +118,6 @@ for idx in "${!AVAILABLE_IFACES[@]}"; do
     echo -e "  ${YELLOW}${num})${NC} ${GREEN}${ifname}${NC} (${ip_addr})${extra}"
 done
 
-# Определение индекса по умолчанию для LAN (любой отличный от WAN)
 for idx in "${!AVAILABLE_IFACES[@]}"; do
     num=$((idx + 1))
     if [ "$num" -ne "$DEFAULT_WAN_IDX" ]; then
@@ -127,7 +126,6 @@ for idx in "${!AVAILABLE_IFACES[@]}"; do
     fi
 done
 
-# Интерактивный выбор WAN
 echo ""
 read -r -p "Выберите внешний интерфейс WAN [1-${#AVAILABLE_IFACES[@]}, по умолчанию ${DEFAULT_WAN_IDX} (${AVAILABLE_IFACES[$((DEFAULT_WAN_IDX-1))]}): " WAN_CHOICE
 WAN_CHOICE="${WAN_CHOICE:-$DEFAULT_WAN_IDX}"
@@ -138,7 +136,6 @@ else
     WAN_IFACE="$WAN_CHOICE"
 fi
 
-# Интерактивный выбор LAN
 read -r -p "Выберите внутренний интерфейс LAN [1-${#AVAILABLE_IFACES[@]}, по умолчанию ${DEFAULT_LAN_IDX} (${AVAILABLE_IFACES[$((DEFAULT_LAN_IDX-1))]}): " LAN_CHOICE
 LAN_CHOICE="${LAN_CHOICE:-$DEFAULT_LAN_IDX}"
 
@@ -168,11 +165,47 @@ nft -c -f /etc/nftables.conf
 systemctl enable --now nftables
 echo -e "${GREEN}✓ Базовый файрвол nftables активирован и запущен.${NC}"
 
-# 8. Сборка бинарника nft-web
-echo -e "\n${YELLOW}[6/6] Сборка и настройка службы nft-web...${NC}"
-cd "${SCRIPT_DIR}"
-go build -ldflags="-s -w" -o /usr/local/bin/nft-web main.go
-chmod +x /usr/local/bin/nft-web
+# 8. Установка бинарника nft-web (готовый бинарник или сборка)
+echo -e "\n${YELLOW}[6/6] Установка службы nft-web...${NC}"
+
+INSTALLED=false
+
+# Вариант A: Локальный готовый бинарник
+if [ -f "${SCRIPT_DIR}/nft-web-linux-amd64" ]; then
+    echo -e "${BLUE}i Использование локального скомпилированного бинарника...${NC}"
+    cp "${SCRIPT_DIR}/nft-web-linux-amd64" /usr/local/bin/nft-web
+    chmod +x /usr/local/bin/nft-web
+    INSTALLED=true
+elif [ -f "${SCRIPT_DIR}/nft-web" ]; then
+    echo -e "${BLUE}i Использование локального бинарника nft-web...${NC}"
+    cp "${SCRIPT_DIR}/nft-web" /usr/local/bin/nft-web
+    chmod +x /usr/local/bin/nft-web
+    INSTALLED=true
+fi
+
+# Вариант B: Скачивание предкомпилированного релиза из GitHub
+if [ "$INSTALLED" = false ]; then
+    ARCH=$(dpkg --print-architecture || echo "amd64")
+    RELEASE_URL="https://github.com/Ttolyanich/nft-web/releases/latest/download/nft-web-linux-${ARCH}"
+    echo -e "${BLUE}i Загрузка готового бинарника из GitHub Releases (${ARCH})...${NC}"
+    if curl -sSL -f "${RELEASE_URL}" -o /usr/local/bin/nft-web 2>/dev/null; then
+        chmod +x /usr/local/bin/nft-web
+        INSTALLED=true
+        echo -e "${GREEN}✓ Готовый бинарник успешно загружен!${NC}"
+    else
+        echo -e "${YELLOW}i Готовый релиз не найден. Сборка из исходников на месте...${NC}"
+    fi
+fi
+
+# Вариант C: Сборка на месте через golang-go (fallback)
+if [ "$INSTALLED" = false ]; then
+    echo -e "${YELLOW}i Установка компилятора Go для сборки...${NC}"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq golang-go > /dev/null
+    cd "${SCRIPT_DIR}"
+    go build -ldflags="-s -w" -o /usr/local/bin/nft-web main.go
+    chmod +x /usr/local/bin/nft-web
+    echo -e "${GREEN}✓ Бинарник скомпилирован на месте.${NC}"
+fi
 
 PASS_HASH=$(echo -n "${ADMIN_PASS}" | sha256sum | awk '{print $1}')
 

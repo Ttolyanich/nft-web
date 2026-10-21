@@ -1,0 +1,50 @@
+name: Build and Release NFT-Web Binary
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build Linux amd64
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o nft-web-linux-amd64 main.go
+          chmod +x nft-web-linux-amd64
+
+      - name: Build Linux arm64
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o nft-web-linux-arm64 main.go
+          chmod +x nft-web-linux-arm64
+
+      - name: Create or Update Pre-release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            nft-web-linux-amd64
+            nft-web-linux-arm64
+          draft: false
+          prerelease: false
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nft-web-binaries
+          path: |
+            nft-web-linux-amd64
+            nft-web-linux-arm64
