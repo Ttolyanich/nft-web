@@ -590,8 +590,8 @@ func parseInputRules(path string) (InputToggles, []CustomInputRule, error) {
 	matches := reInput.FindAllStringSubmatch(content, -1)
 	for _, m := range matches {
 		port, _ := strconv.Atoi(m[3])
-		// skip standard ports handled by toggles
-		if port == 22 || port == 80 || port == 443 || port == 1194 || port == 51820 || port == 8443 {
+		// skip standard ports handled by toggles (22, 80, 443, 1194, 51820)
+		if port == 22 || port == 80 || port == 443 || port == 1194 || port == 51820 {
 			continue
 		}
 		access := "all"
