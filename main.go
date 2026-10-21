@@ -629,13 +629,11 @@ func handleGetInputRules(w http.ResponseWriter, r *http.Request) {
 }
 
 func insertRuleAfterHook(content, chainName, rule string) string {
-	// Match hook line inside the chain
-	pattern := fmt.Sprintf(`(?s)(chain\s+%s\s*\{[^}]*?type\s+[^\n]+;\s*(?:policy\s+[^\n]+;)?\s*\n)`, chainName)
+	pattern := fmt.Sprintf(`(?s)chain\s+%s\s*\{[^}]*?type\s+[^\n]+;\s*(?:policy\s+[^\n]+;)?\s*\n`, chainName)
 	reHook := regexp.MustCompile(pattern)
-	if reHook.MatchString(content) {
-		return reHook.ReplaceAllString(content, "${1}"+rule+"\n")
+	if loc := reHook.FindStringIndex(content); loc != nil {
+		return content[:loc[1]] + rule + "\n" + content[loc[1]:]
 	}
-	// Fallback to inserting after chain opening if hook is somehow different
 	return strings.Replace(content, "chain "+chainName+" {", "chain "+chainName+" {\n"+rule, 1)
 }
 
@@ -1037,21 +1035,22 @@ func handleAddForward(w http.ResponseWriter, r *http.Request) {
 		dnatRule += " # " + req.Comment
 	}
 
-	rePrerouting := regexp.MustCompile(`(?s)(chain\s+PREROUTING\s*\{[^}]*priority\s+dstnat;[^\n]*\n)`)
-	if !rePrerouting.MatchString(content) {
+	rePrerouting := regexp.MustCompile(`(?s)chain\s+PREROUTING\s*\{[^}]*priority\s+dstnat;[^\n]*\n`)
+	locPrerouting := rePrerouting.FindStringIndex(content)
+	if locPrerouting == nil {
 		jsonError(w, "Цепочка PREROUTING не найдена", http.StatusBadRequest)
 		return
 	}
-	content = rePrerouting.ReplaceAllString(content, "${1}"+dnatRule+"\n")
+	content = content[:locPrerouting[1]] + dnatRule + "\n" + content[locPrerouting[1]:]
 
 	forwardRule := fmt.Sprintf("                ip daddr %s %s dport %d accept", cleanIntIP, req.Proto, req.IntPort)
 	if req.Comment != "" {
 		forwardRule += " # " + req.Comment
 	}
 
-	reForward := regexp.MustCompile(`(?s)(chain\s+FORWARD\s*\{[^}]*priority\s+filter;[^\n]*\n)`)
-	if reForward.MatchString(content) {
-		content = reForward.ReplaceAllString(content, "${1}"+forwardRule+"\n")
+	reForward := regexp.MustCompile(`(?s)chain\s+FORWARD\s*\{[^}]*priority\s+filter;[^\n]*\n`)
+	if locForward := reForward.FindStringIndex(content); locForward != nil {
+		content = content[:locForward[1]] + forwardRule + "\n" + content[locForward[1]:]
 	}
 
 	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("nft_test_%d.conf", time.Now().UnixNano()))

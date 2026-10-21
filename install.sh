@@ -24,6 +24,66 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONF_FILE="/etc/nft-web.conf"
+BIN_PATH="/usr/local/bin/nft-web"
+
+# Функция обновления бинарника
+update_binary() {
+    local installed=false
+    if [ -f "${SCRIPT_DIR}/nft-web-linux-amd64" ]; then
+        cp "${SCRIPT_DIR}/nft-web-linux-amd64" "${BIN_PATH}"
+        chmod +x "${BIN_PATH}"
+        installed=true
+    elif [ -f "${SCRIPT_DIR}/nft-web" ]; then
+        cp "${SCRIPT_DIR}/nft-web" "${BIN_PATH}"
+        chmod +x "${BIN_PATH}"
+        installed=true
+    fi
+
+    if [ "$installed" = false ]; then
+        local arch
+        arch=$(dpkg --print-architecture || echo "amd64")
+        local release_url="https://github.com/Ttolyanich/nft-web/releases/latest/download/nft-web-linux-${arch}"
+        echo -e "${BLUE}i Загрузка готового бинарника из GitHub Releases (${arch})...${NC}"
+        if curl -sSL -f "${release_url}" -o "${BIN_PATH}" 2>/dev/null; then
+            chmod +x "${BIN_PATH}"
+            installed=true
+            echo -e "${GREEN}✓ Готовый бинарник успешно загружен!${NC}"
+        else
+            echo -e "${YELLOW}i Готовый релиз не найден. Сборка из исходников на месте...${NC}"
+        fi
+    fi
+
+    if [ "$installed" = false ]; then
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq golang-go > /dev/null
+        cd "${SCRIPT_DIR}"
+        go build -ldflags="-s -w" -o "${BIN_PATH}" main.go
+        chmod +x "${BIN_PATH}"
+        echo -e "${GREEN}✓ Бинарник скомпилирован на месте.${NC}"
+    fi
+}
+
+# Проверка существующей установки (Update Mode)
+if [ -f "${CONF_FILE}" ] && [ -f "${BIN_PATH}" ]; then
+    echo -e "\n${CYAN}[i] Обнаружена существующая установка NFT-Web!${NC}"
+    echo -e "  1) ${GREEN}Обновить бинарник и перезапустить службу${NC} (пароль и правила сохраняются) [Enter]"
+    echo -e "  2) ${YELLOW}Полная переустановка${NC} (сброс пароля и шаблона nftables)"
+    echo ""
+    read -r -p "Выберите действие [1/2, по умолчанию 1]: " MODE_CHOICE
+    MODE_CHOICE="${MODE_CHOICE:-1}"
+
+    if [ "$MODE_CHOICE" == "1" ]; then
+        echo -e "\n${YELLOW}Обновление бинарника NFT-Web...${NC}"
+        update_binary
+        systemctl restart nft-web
+        echo -e "\n${GREEN}======================================================${NC}"
+        echo -e "${GREEN}          СЛУЖБА УСПЕШНО ОБНОВЛЕНА И ПЕРЕЗАПУЩЕНА!    ${NC}"
+        echo -e "${GREEN}======================================================${NC}"
+        echo -e "Конфигурация и пароль не изменились."
+        echo -e "Статус службы: ${BLUE}systemctl status nft-web${NC}\n"
+        exit 0
+    fi
+fi
 
 # 2. Интерактивный запрос пароля для веб-интерфейса
 echo -e "\n${YELLOW}Безопасность доступа к веб-панели:${NC}"
@@ -62,7 +122,7 @@ EOF
 sysctl --system > /dev/null 2>&1 || sysctl -p /etc/sysctl.d/99-gateway.conf > /dev/null 2>&1 || true
 echo -e "${GREEN}✓ IP Forwarding включен в /etc/sysctl.d/99-gateway.conf${NC}"
 
-# 4. Установка пакетов (без компилятора!)
+# 4. Установка пакетов
 echo -e "\n${YELLOW}[2/6] Проверка и установка пакетов (nftables, fail2ban, curl)...${NC}"
 apt-get update -qq
 DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nftables fail2ban curl iproute2 > /dev/null
@@ -169,51 +229,13 @@ nft -c -f /etc/nftables.conf
 systemctl enable --now nftables
 echo -e "${GREEN}✓ Базовый файрвол nftables активирован и запущен.${NC}"
 
-# 8. Установка бинарника nft-web (готовый бинарник или сборка)
+# 8. Установка бинарника nft-web
 echo -e "\n${YELLOW}[6/6] Установка службы nft-web...${NC}"
-
-INSTALLED=false
-
-# Вариант A: Локальный готовый бинарник
-if [ -f "${SCRIPT_DIR}/nft-web-linux-amd64" ]; then
-    echo -e "${BLUE}i Использование локального скомпилированного бинарника...${NC}"
-    cp "${SCRIPT_DIR}/nft-web-linux-amd64" /usr/local/bin/nft-web
-    chmod +x /usr/local/bin/nft-web
-    INSTALLED=true
-elif [ -f "${SCRIPT_DIR}/nft-web" ]; then
-    echo -e "${BLUE}i Использование локального бинарника nft-web...${NC}"
-    cp "${SCRIPT_DIR}/nft-web" /usr/local/bin/nft-web
-    chmod +x /usr/local/bin/nft-web
-    INSTALLED=true
-fi
-
-# Вариант B: Скачивание предкомпилированного релиза из GitHub
-if [ "$INSTALLED" = false ]; then
-    ARCH=$(dpkg --print-architecture || echo "amd64")
-    RELEASE_URL="https://github.com/Ttolyanich/nft-web/releases/latest/download/nft-web-linux-${ARCH}"
-    echo -e "${BLUE}i Загрузка готового бинарника из GitHub Releases (${ARCH})...${NC}"
-    if curl -sSL -f "${RELEASE_URL}" -o /usr/local/bin/nft-web 2>/dev/null; then
-        chmod +x /usr/local/bin/nft-web
-        INSTALLED=true
-        echo -e "${GREEN}✓ Готовый бинарник успешно загружен!${NC}"
-    else
-        echo -e "${YELLOW}i Готовый релиз не найден. Сборка из исходников на месте...${NC}"
-    fi
-fi
-
-# Вариант C: Сборка на месте через golang-go (fallback)
-if [ "$INSTALLED" = false ]; then
-    echo -e "${YELLOW}i Установка компилятора Go для сборки...${NC}"
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq golang-go > /dev/null
-    cd "${SCRIPT_DIR}"
-    go build -ldflags="-s -w" -o /usr/local/bin/nft-web main.go
-    chmod +x /usr/local/bin/nft-web
-    echo -e "${GREEN}✓ Бинарник скомпилирован на месте.${NC}"
-fi
+update_binary
 
 PASS_HASH=$(echo -n "${ADMIN_PASS}" | sha256sum | awk '{print $1}')
 
-cat << EOF > /etc/nft-web.conf
+cat << EOF > "${CONF_FILE}"
 {
   "listen": "0.0.0.0:${WEB_PORT}",
   "password_hash": "${PASS_HASH}",
@@ -221,7 +243,7 @@ cat << EOF > /etc/nft-web.conf
   "nft_config": "/etc/nftables.conf"
 }
 EOF
-chmod 600 /etc/nft-web.conf
+chmod 600 "${CONF_FILE}"
 
 cat << 'EOF' > /etc/systemd/system/nft-web.service
 [Unit]
@@ -252,7 +274,7 @@ echo -e "${GREEN}======================================================${NC}"
 echo -e "Адрес панели:          ${YELLOW}http://${HOST_IP}:${WEB_PORT}${NC}"
 echo -e "Пароль администратора: ${YELLOW}${ADMIN_PASS}${NC}"
 echo -e "------------------------------------------------------"
-echo -e "Конфигурация панели:   ${BLUE}/etc/nft-web.conf${NC} (права 0600)"
+echo -e "Конфигурация панели:   ${BLUE}${CONF_FILE}${NC} (права 0600)"
 echo -e "Файрвол nftables:      ${BLUE}/etc/nftables.conf${NC}"
 echo -e "Управление службой:    ${BLUE}systemctl status nft-web${NC}"
 echo -e "======================================================\n"
